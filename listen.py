@@ -21,6 +21,7 @@ class Handler(socketserver.StreamRequestHandler):
 		if language not in ('python', 'java', 'c++', 'pypy'): return
 		filename = self.rfile.readline().decode('utf-8').strip()
 		timelimit = self.rfile.readline().decode('utf-8').strip()
+		mem = '512' if problem in os.environ.get('INCMEM', '').split(',') else '256'
 		try: float(timelimit)
 		except ValueError: return
 		program = b''
@@ -35,7 +36,7 @@ class Handler(socketserver.StreamRequestHandler):
 		os.mkdir(os.path.join(tmp, 'chroot'))
 		open(os.path.join(tmp, 'chroot', filename), 'wb').write(program)
 		uid = str(random.randint(65536, 1000000))
-		nsjail = ['nsjail', '-Mo', '-u', str(uid), '-g', str(uid), '-c', os.path.join(tmp, 'chroot'), '-t', timelimit, '--rlimit_as', 'inf' if language == 'java' else '256', '--rlimit_nproc', 'soft' if language == 'java' else '16', '--rlimit_fsize', '10',
+		nsjail = ['nsjail', '-Mo', '-u', str(uid), '-g', str(uid), '-c', os.path.join(tmp, 'chroot'), '-t', timelimit, '--rlimit_as', 'inf' if language == 'java' else mem, '--rlimit_stack', 'inf' if language == 'java' else mem, '--rlimit_nproc', 'soft' if language == 'java' else '16', '--rlimit_fsize', '10',
 		          '--iface_no_lo', '-R', '/bin', '-R', '/lib', '-R', '/lib64', '-R', '/usr/bin', '-R', '/usr/lib', '-R', '/usr/lib64', '-R', '/etc/', '-R', '/opt/pypy3', '-Q', '--']
 		if language == 'python': command = ['/usr/bin/python', '-S', filename]
 		elif language == 'pypy': command = ['/usr/bin/pypy3', '-S', filename]
@@ -46,7 +47,7 @@ class Handler(socketserver.StreamRequestHandler):
 				shutil.move(os.path.join(tmp, 'chroot', filename), os.path.join(tmp, 'chroot', new_filename))
 				filename = new_filename
 				subprocess.run(['/usr/bin/javac', os.path.join(tmp, 'chroot', filename)], capture_output=True)
-			command = ['/usr/bin/java', filename[:-5] if filename.endswith('.java') else filename]
+			command = ['/usr/bin/java', '-Xmx'+mem+'m', filename[:-5] if filename.endswith('.java') else filename]
 		elif language == 'c++':
 			subprocess.run(['/usr/bin/g++', '-std=c++17', '-O3', os.path.join(tmp, 'chroot', filename), '-o', os.path.splitext(os.path.join(tmp, 'chroot', filename))[0]])
 			command = [os.path.splitext(filename)[0]]
