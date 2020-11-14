@@ -9,6 +9,7 @@ import shlex
 import json
 import random
 import shutil
+import timeit
 
 class Handler(socketserver.StreamRequestHandler):
 	def handle(self):
@@ -67,9 +68,10 @@ class Handler(socketserver.StreamRequestHandler):
 				elif int(p.stdout) != 0: result['status'] = 'error'
 			else:
 				with open(test, 'rb') as stdin, open(os.path.join(tmp, 'stdout'), 'wb') as stdout:
-					start = time.time()
-					p = subprocess.run(nsjail+command, stdin=stdin, stdout=stdout, stderr=subprocess.PIPE)
-					if time.time() - start > float(timelimit) and p.returncode == 137: result['status'] = 'timeout'
+					timervars = {'p': {}, 'subprocess': subprocess, 'nsjail': nsjail, 'command': command, 'stdin': stdin, 'stdout': stdout}
+					result['runtime'] = timeit.timeit('p["p"] = subprocess.run(nsjail+command, stdin=stdin, stdout=stdout, stderr=subprocess.PIPE)', number=1, globals=timervars)
+					p = timervars['p']['p']
+					if result['runtime'] > float(timelimit) and p.returncode == 137: result['status'] = 'timeout'
 					elif p.returncode == 137: result['status'] = 'memoryout'
 					elif p.returncode != 0: result['status'] = 'error'
 			if not result.get('status'):
