@@ -38,7 +38,7 @@ class Handler(socketserver.StreamRequestHandler):
 		open(os.path.join(tmp, 'chroot', filename), 'wb').write(program)
 		uid = str(random.randint(65536, 1000000))
 		nsjail = ['nsjail', '-Mo', '-u', str(uid), '-g', str(uid), '-c', os.path.join(tmp, 'chroot'), '-t', timelimit, '--rlimit_as', 'inf' if language == 'java' else mem, '--rlimit_stack', 'inf' if language == 'java' else mem, '--rlimit_nproc', 'soft' if language == 'java' else '16', '--rlimit_fsize', '10',
-		          '--iface_no_lo', '-R', '/bin', '-R', '/lib', '-R', '/lib64', '-R', '/usr/bin', '-R', '/usr/lib', '-R', '/usr/lib64', '-R', '/etc/', '-R', '/opt/pypy3', '-Q', '--']
+		          '--iface_no_lo', '--max_cpus', '1', '-R', '/bin', '-R', '/lib', '-R', '/lib64', '-R', '/usr/bin', '-R', '/usr/lib', '-R', '/usr/lib64', '-R', '/etc/', '-R', '/opt/pypy3', '-Q', '--']
 		if language == 'python': command = ['/usr/bin/python', '-S', filename]
 		elif language == 'pypy': command = ['/usr/bin/pypy3', '-S', filename]
 		elif language == 'java':
