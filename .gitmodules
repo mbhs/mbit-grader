@@ -1,0 +1,3 @@
+[submodule "nsjail"]
+	path = nsjail
+	url = git@github.com:google/nsjail.git
